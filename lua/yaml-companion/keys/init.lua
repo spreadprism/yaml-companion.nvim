@@ -59,38 +59,24 @@ end
 
 --- Get all keys and opens snacks picker
 ---@param bufnr? number Buffer number (defaults to current buffer)
----@return YamlQuickfixEntry[] entries List of quickfix entries
 M.snacks = function(bufnr)
   -- Convert 0 or nil to actual buffer number (0 means current buffer in Neovim API but not in quickfix)
   if not bufnr or bufnr == 0 then
     bufnr = vim.api.nvim_get_current_buf()
   end
 
-  -- Get configuration
-  local config = require("yaml-companion.config")
-  local cfg = config.options.keys or {}
-  local max_len = cfg.max_value_length or 50
-  local include_values = cfg.include_values ~= false
-
   local keys = document.all_keys(bufnr)
   local entries = {}
 
   for _, key_info in ipairs(keys) do
     local text = key_info.key
-    if include_values and key_info.value then
-      ---@type string
-      local value = key_info.value
-      if #value > max_len then
-        value = value:sub(1, max_len) .. "..."
-      end
-      text = text .. " = " .. value
-    end
 
     table.insert(entries, {
       bufnr = bufnr,
       lnum = key_info.line,
       col = key_info.col,
       text = text,
+      pos = { key_info.line, key_info.col },
       file = vim.api.nvim_buf_get_name(bufnr),
     })
   end
@@ -113,8 +99,6 @@ M.snacks = function(bufnr)
   else
     vim.notify("snacks.nvim picker not available", vim.log.levels.WARN)
   end
-
-  return entries
 end
 
 --- Get key at cursor position
